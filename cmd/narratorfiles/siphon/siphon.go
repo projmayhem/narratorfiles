@@ -3,6 +3,7 @@ package siphon
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -51,4 +52,21 @@ func (s *Siphon) ListObjects(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func (s *Siphon) GetObject(w http.ResponseWriter, r *http.Request) {
+	objKey := strings.TrimPrefix(r.URL.Path, "/")
+
+	req, _ := s.Client.GetObjectRequest(&s3.GetObjectInput{
+		Bucket: aws.String(s.Bucket),
+		Key:    aws.String(s.Prefix + objKey),
+	})
+
+	urlStr, err := req.Presign(15 * time.Minute) // Presign the URL valid for 15 minutes
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, urlStr, http.StatusTemporaryRedirect)
 }

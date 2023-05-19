@@ -35,6 +35,7 @@ func run() error {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", siphon.ListObjects)
+	mux.Handle("/object/", http.StripPrefix("/object/", http.HandlerFunc(siphon.GetObject)))
 
 	server := &http.Server{
 		Addr:    ":8082",
