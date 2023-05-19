@@ -45,23 +45,13 @@
 </head>
 <body>
     <div class="container">
-        <h1 class="title is-1">👾 narrator files</h1>
+        <h1 class="title is-1">👾 narrator files: playing 🔊</h1>
         <div class="content">
-            <table class="table">
-                <tbody>
-                    {{range .}}
-                    <tr>
-                        <td>
-                            {{if eq .Type "audio"}}
-                                <a href="/play/{{.Key}}">{{.Key}}</a>
-                            {{else}}
-                                <a href="/object/{{.Key}}" target="_blank">{{.Key}}</a>
-                            {{end}}
-                        </td>                        
-                    </tr>
-                    {{end}}
-                </tbody>
-            </table>
+            <p class="file-name">Now playing: {{.Key}}</p>
+            <audio controls>
+                <source src="{{.URL}}" type="{{.Mime}}">
+                Your browser does not support the audio tag.
+            </audio>
         </div>
     </div>
 </body>

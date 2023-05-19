@@ -26,16 +26,12 @@ func run() error {
 		return fmt.Errorf("failed to create aws session: %w", err)
 	}
 	svc := s3.New(sess)
-
-	siphon := &siphon.Siphon{
-		Client: svc,
-		Bucket: bucket,
-		Prefix: prefix,
-	}
+	siphon := siphon.New(svc, bucket, prefix)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", siphon.ListObjects)
 	mux.Handle("/object/", http.StripPrefix("/object/", http.HandlerFunc(siphon.GetObject)))
+	mux.Handle("/play/", http.StripPrefix("/play/", http.HandlerFunc(siphon.PlayAudio)))
 
 	server := &http.Server{
 		Addr:    ":8082",
