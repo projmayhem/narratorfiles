@@ -28,7 +28,7 @@ jobs:
     - name: Test
       run: go test -v ./...
 
-  build-and-push-image:
+  docker-push:
     runs-on: ubuntu-latest
     permissions:
       contents: read
