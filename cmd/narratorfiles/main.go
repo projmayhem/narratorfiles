@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/projmayhem/narratorfiles/cmd/narratorfiles/config"
+	"github.com/projmayhem/narratorfiles/cmd/narratorfiles/logger"
 	"github.com/projmayhem/narratorfiles/cmd/narratorfiles/siphon"
 	"github.com/projmayhem/narratorfiles/cmd/narratorfiles/webui"
 	"gitlab.com/gopkgz/handlers"
@@ -17,6 +17,9 @@ import (
 func run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	lgr := logger.New()
+	rpttr := &logger.ErrorReporter{Logger: lgr}
 
 	bucket, err := config.BucketFromEnv()
 	if err != nil {
@@ -43,7 +46,7 @@ func run() error {
 
 	server := &http.Server{
 		Addr:    ":8082",
-		Handler: handlers.LogMiddleware(mux, log.Printf),
+		Handler: handlers.LogMiddleware(handlers.PanicRecoveryMiddleware(mux, rpttr.ReportError), lgr.Printf),
 	}
 
 	return server.ListenAndServe()
