@@ -14,6 +14,10 @@ import (
 	"gitlab.com/gopkgz/handlers"
 )
 
+const (
+	serverAddr = ":9000"
+)
+
 func run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -45,7 +49,7 @@ func run() error {
 	mux.HandleFunc("/static/", webui.StaticFileHandleFunc)
 
 	server := &http.Server{
-		Addr:    ":8082",
+		Addr:    serverAddr,
 		Handler: handlers.LogMiddleware(handlers.PanicRecoveryMiddleware(mux, rpttr.ReportError), lgr.Printf),
 	}
 

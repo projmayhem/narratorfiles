@@ -12,3 +12,4 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 COPY --from=build /narratorfiles /narratorfiles
 CMD ["/narratorfiles"]
+EXPOSE 9000
