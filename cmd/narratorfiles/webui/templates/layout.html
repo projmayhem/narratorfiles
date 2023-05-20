@@ -50,9 +50,9 @@
                     {{range .}}
                     <tr>
                         <td>
-                            {{if eq .Type "audio"}}
+                            {{if eq .Type 2}}
                                 <a href="/play/{{.Key}}">{{.Key}}</a>
-                            {{else if eq .Type "dir"}}
+                            {{else if eq .Type 1}}
                                 <a href="/{{.Key}}/">{{.Key}}</a>
                             {{else}}
                                 <a href="/object/{{.Key}}" target="_blank">{{.Key}}</a>

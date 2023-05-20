@@ -1,31 +1,38 @@
 package siphon
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/projmayhem/narratorfiles/cmd/narratorfiles/objecttype"
 	"github.com/projmayhem/narratorfiles/cmd/narratorfiles/webui"
 )
 
 type Siphon struct {
-	Client *s3.S3
-	Bucket string
-	Prefix string
-
+	Client       *s3.S3
+	Bucket       string
+	Prefix       string
 	audioExtMime map[string]string
 }
 
-func New(s3 *s3.S3, bucket, prefix string) *Siphon {
-	return &Siphon{
+type Object struct {
+	Key  string
+	Type objecttype.ObjectType
+}
+
+func New(ctx context.Context, s3 *s3.S3, bucket, prefix string) *Siphon {
+	s := &Siphon{
 		Client: s3,
 		Bucket: bucket,
 		Prefix: prefix,
-
 		audioExtMime: map[string]string{
 			".mp3":  "audio/mpeg",
 			".wav":  "audio/wav",
@@ -36,11 +43,55 @@ func New(s3 *s3.S3, bucket, prefix string) *Siphon {
 			".wma":  "audio/x-ms-wma",
 		},
 	}
+	return s
 }
 
-type Object struct {
-	Key  string
-	Type string
+func (s *Siphon) fetchObjects(ctx context.Context, prefix string) ([]Object, error) {
+	input := &s3.ListObjectsV2Input{
+		Bucket:    aws.String(s.Bucket),
+		Prefix:    aws.String(prefix),
+		Delimiter: aws.String("/"),
+	}
+
+	dirs := []Object{}
+	objs := []Object{}
+	err := s.Client.ListObjectsV2PagesWithContext(ctx, input, func(page *s3.ListObjectsV2Output, lastPage bool) bool {
+		for _, obj := range page.Contents {
+			newPath := strings.TrimPrefix(*obj.Key, prefix)
+
+			if _, ok := s.audioExtMime[filepath.Ext(*obj.Key)]; ok {
+				objs = append(objs, Object{
+					Key:  newPath,
+					Type: objecttype.Audio,
+				})
+			} else {
+				objs = append(objs, Object{
+					Key:  newPath,
+					Type: objecttype.Other,
+				})
+			}
+		}
+		for _, dir := range page.CommonPrefixes {
+			newPath := strings.TrimPrefix(*dir.Prefix, prefix)
+			dirs = append(dirs, Object{
+				Key:  newPath,
+				Type: objecttype.Directory,
+			})
+		}
+		return !lastPage
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list objects: %w", err)
+	}
+
+	sort.Slice(objs, func(i, j int) bool {
+		return objs[i].Key < objs[j].Key
+	})
+	sort.Slice(dirs, func(i, j int) bool {
+		return objs[i].Key < objs[j].Key
+	})
+
+	return append(dirs, objs...), nil
 }
 
 func (s *Siphon) ListObjects(w http.ResponseWriter, r *http.Request) {
@@ -57,38 +108,7 @@ func (s *Siphon) ListObjects(w http.ResponseWriter, r *http.Request) {
 		prefix = prefix + "/"
 	}
 
-	input := &s3.ListObjectsV2Input{
-		Bucket:    aws.String(s.Bucket),
-		Prefix:    aws.String(prefix),
-		Delimiter: aws.String("/"),
-	}
-
-	objects := []Object{}
-	err = s.Client.ListObjectsV2PagesWithContext(ctx, input, func(page *s3.ListObjectsV2Output, lastPage bool) bool {
-		for _, obj := range page.Contents {
-			objKey := strings.TrimPrefix(*obj.Key, prefix)
-			ext := filepath.Ext(objKey)
-			if _, ok := s.audioExtMime[ext]; ok {
-				objects = append(objects, Object{
-					Key:  objKey,
-					Type: "audio",
-				})
-			} else {
-				objects = append(objects, Object{
-					Key:  objKey,
-					Type: "other",
-				})
-			}
-		}
-		for _, commonPrefix := range page.CommonPrefixes {
-			dirKey := strings.TrimPrefix(*commonPrefix.Prefix, prefix)
-			objects = append(objects, Object{
-				Key:  dirKey,
-				Type: "dir",
-			})
-		}
-		return !lastPage
-	})
+	objects, err := s.fetchObjects(ctx, prefix)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

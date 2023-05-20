@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -11,6 +12,9 @@ import (
 )
 
 func run() error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	bucket, err := config.BucketFromEnv()
 	if err != nil {
 		return fmt.Errorf("failed to get bucket from env: %w", err)
@@ -26,7 +30,7 @@ func run() error {
 		return fmt.Errorf("failed to create aws session: %w", err)
 	}
 	svc := s3.New(sess)
-	siphon := siphon.New(svc, bucket, prefix)
+	siphon := siphon.New(ctx, svc, bucket, prefix)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", siphon.ListObjects)
