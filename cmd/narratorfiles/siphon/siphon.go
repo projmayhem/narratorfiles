@@ -52,15 +52,21 @@ func (s *Siphon) ListObjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	prefix := s.Prefix + strings.TrimPrefix(r.URL.Path, "/")
+	if prefix != "" && prefix[len(prefix)-1] != '/' {
+		prefix = prefix + "/"
+	}
+
 	input := &s3.ListObjectsV2Input{
-		Bucket: aws.String(s.Bucket),
-		Prefix: aws.String(s.Prefix),
+		Bucket:    aws.String(s.Bucket),
+		Prefix:    aws.String(prefix),
+		Delimiter: aws.String("/"),
 	}
 
 	objects := []Object{}
 	err = s.Client.ListObjectsV2PagesWithContext(ctx, input, func(page *s3.ListObjectsV2Output, lastPage bool) bool {
 		for _, obj := range page.Contents {
-			objKey := strings.TrimPrefix(*obj.Key, s.Prefix)
+			objKey := strings.TrimPrefix(*obj.Key, prefix)
 			ext := filepath.Ext(objKey)
 			if _, ok := s.audioExtMime[ext]; ok {
 				objects = append(objects, Object{
@@ -73,6 +79,13 @@ func (s *Siphon) ListObjects(w http.ResponseWriter, r *http.Request) {
 					Type: "other",
 				})
 			}
+		}
+		for _, commonPrefix := range page.CommonPrefixes {
+			dirKey := strings.TrimPrefix(*commonPrefix.Prefix, prefix)
+			objects = append(objects, Object{
+				Key:  dirKey,
+				Type: "dir",
+			})
 		}
 		return !lastPage
 	})
