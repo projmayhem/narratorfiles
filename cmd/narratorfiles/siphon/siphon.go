@@ -3,7 +3,6 @@ package siphon
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"path/filepath"
 	"sort"
@@ -160,7 +159,6 @@ func (s *Siphon) PlayAudio(w http.ResponseWriter, r *http.Request) {
 
 		urlStr, err := req.Presign(15 * time.Minute) // Presign the URL valid for 15 minutes
 		if err != nil {
-			log.Println(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -175,7 +173,6 @@ func (s *Siphon) PlayAudio(w http.ResponseWriter, r *http.Request) {
 			Mime: mimeType,
 		})
 		if err != nil {
-			log.Println(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

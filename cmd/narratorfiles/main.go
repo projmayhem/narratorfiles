@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -10,6 +11,7 @@ import (
 	"github.com/projmayhem/narratorfiles/cmd/narratorfiles/config"
 	"github.com/projmayhem/narratorfiles/cmd/narratorfiles/siphon"
 	"github.com/projmayhem/narratorfiles/cmd/narratorfiles/webui"
+	"gitlab.com/gopkgz/handlers"
 )
 
 func run() error {
@@ -41,7 +43,7 @@ func run() error {
 
 	server := &http.Server{
 		Addr:    ":8082",
-		Handler: mux,
+		Handler: handlers.LogMiddleware(mux, log.Printf),
 	}
 
 	return server.ListenAndServe()
