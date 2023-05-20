@@ -30,7 +30,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    needs: [build-and-test]
+    needs: [build]
 
     steps:
       - name: Checkout repository
