@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/projmayhem/narratorfiles/cmd/narratorfiles/config"
 	"github.com/projmayhem/narratorfiles/cmd/narratorfiles/siphon"
+	"github.com/projmayhem/narratorfiles/cmd/narratorfiles/webui"
 )
 
 func run() error {
@@ -36,6 +37,7 @@ func run() error {
 	mux.HandleFunc("/", siphon.ListObjects)
 	mux.Handle("/object/", http.StripPrefix("/object/", http.HandlerFunc(siphon.GetObject)))
 	mux.Handle("/play/", http.StripPrefix("/play/", http.HandlerFunc(siphon.PlayAudio)))
+	mux.HandleFunc("/static/", webui.StaticFileHandleFunc)
 
 	server := &http.Server{
 		Addr:    ":8082",
