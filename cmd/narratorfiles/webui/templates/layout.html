@@ -51,11 +51,11 @@
                     <tr>
                         <td>
                             {{if eq .Type 2}}
-                                <a href="/play/{{.Key}}">{{.Key}}</a>
+                                <a href="/play/{{.Key}}">{{.Name}}</a>
                             {{else if eq .Type 1}}
-                                <a href="/{{.Key}}/">{{.Key}}</a>
+                                <a href="/{{.Key}}/">{{.Name}}</a>
                             {{else}}
-                                <a href="/object/{{.Key}}" target="_blank">{{.Key}}</a>
+                                <a href="/object/{{.Key}}" target="_blank">{{.Name}}</a>
                             {{end}}
                         </td>                        
                     </tr>

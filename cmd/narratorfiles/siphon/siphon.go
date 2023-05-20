@@ -25,6 +25,7 @@ type Siphon struct {
 
 type Object struct {
 	Key  string
+	Name string
 	Type objecttype.ObjectType
 }
 
@@ -57,24 +58,26 @@ func (s *Siphon) fetchObjects(ctx context.Context, prefix string) ([]Object, err
 	objs := []Object{}
 	err := s.Client.ListObjectsV2PagesWithContext(ctx, input, func(page *s3.ListObjectsV2Output, lastPage bool) bool {
 		for _, obj := range page.Contents {
-			newPath := strings.TrimPrefix(*obj.Key, prefix)
-
+			name := strings.TrimPrefix(*obj.Key, prefix)
 			if _, ok := s.audioExtMime[filepath.Ext(*obj.Key)]; ok {
 				objs = append(objs, Object{
-					Key:  newPath,
+					Key:  *obj.Key,
+					Name: name,
 					Type: objecttype.Audio,
 				})
 			} else {
 				objs = append(objs, Object{
-					Key:  newPath,
+					Key:  *obj.Key,
+					Name: name,
 					Type: objecttype.Other,
 				})
 			}
 		}
 		for _, dir := range page.CommonPrefixes {
-			newPath := strings.TrimPrefix(*dir.Prefix, prefix)
+			name := strings.TrimPrefix(*dir.Prefix, prefix)
 			dirs = append(dirs, Object{
-				Key:  newPath,
+				Key:  *dir.Prefix,
+				Name: name,
 				Type: objecttype.Directory,
 			})
 		}
@@ -85,10 +88,10 @@ func (s *Siphon) fetchObjects(ctx context.Context, prefix string) ([]Object, err
 	}
 
 	sort.Slice(objs, func(i, j int) bool {
-		return objs[i].Key < objs[j].Key
+		return objs[i].Name < objs[j].Name
 	})
 	sort.Slice(dirs, func(i, j int) bool {
-		return objs[i].Key < objs[j].Key
+		return objs[i].Name < objs[j].Name
 	})
 
 	return append(dirs, objs...), nil
