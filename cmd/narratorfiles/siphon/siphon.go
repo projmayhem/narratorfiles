@@ -15,6 +15,8 @@ import (
 	"github.com/projmayhem/narratorfiles/cmd/narratorfiles/webui"
 )
 
+const presignDuration = 12 * time.Hour
+
 type Siphon struct {
 	Client       *s3.S3
 	Bucket       string
@@ -135,7 +137,7 @@ func (s *Siphon) GetObject(w http.ResponseWriter, r *http.Request) {
 		Key:    aws.String(s.Prefix + objKey),
 	})
 
-	urlStr, err := req.Presign(15 * time.Minute) // Presign the URL valid for 15 minutes
+	urlStr, err := req.Presign(presignDuration)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -161,7 +163,7 @@ func (s *Siphon) PlayAudio(w http.ResponseWriter, r *http.Request) {
 			Key:    aws.String(s.Prefix + key),
 		})
 
-		urlStr, err := req.Presign(15 * time.Minute) // Presign the URL valid for 15 minutes
+		urlStr, err := req.Presign(presignDuration)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
