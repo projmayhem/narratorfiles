@@ -86,12 +86,16 @@ func (s *Siphon) fetchObjects(ctx context.Context, prefix string) ([]Object, err
 		return nil, fmt.Errorf("failed to list objects: %w", err)
 	}
 
-	sort.Slice(objs, func(i, j int) bool {
-		return objs[i].Name < objs[j].Name
-	})
-	sort.Slice(dirs, func(i, j int) bool {
-		return objs[i].Name < objs[j].Name
-	})
+	if len(objs) == 0 {
+		sort.Slice(objs, func(i, j int) bool {
+			return objs[i].Name < objs[j].Name
+		})
+	}
+	if len(dirs) == 0 {
+		sort.Slice(dirs, func(i, j int) bool {
+			return objs[i].Name < objs[j].Name
+		})
+	}
 
 	return append(dirs, objs...), nil
 }
